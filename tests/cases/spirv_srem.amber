@@ -1,0 +1,83 @@
+#!amber
+
+DEVICE_EXTENSION VK_KHR_storage_buffer_storage_class
+
+SHADER compute srem_shader SPIRV-ASM
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpName %__resource_var_0_1__ "__resource_var_0_1__"
+               OpName %__resource_var_0_0__ "__resource_var_0_0__"
+               OpName %__resource_var_0_2__ "__resource_var_0_2__"
+               OpName %main "main"
+               OpDecorate %_arr_uint_uint_1 ArrayStride 4
+               OpMemberDecorate %_struct_2 0 Offset 0
+               OpDecorate %_struct_2 Block
+               OpDecorate %__resource_var_0_1__ Binding 1
+               OpDecorate %__resource_var_0_1__ DescriptorSet 0
+               OpDecorate %_struct_2 Block
+               OpDecorate %__resource_var_0_0__ Binding 0
+               OpDecorate %__resource_var_0_0__ DescriptorSet 0
+               OpDecorate %_struct_2 Block
+               OpDecorate %__resource_var_0_2__ Binding 2
+               OpDecorate %__resource_var_0_2__ DescriptorSet 0
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_uint_uint_1 = OpTypeArray %uint %uint_1
+  %_struct_2 = OpTypeStruct %_arr_uint_uint_1
+%_ptr_StorageBuffer__struct_2 = OpTypePointer StorageBuffer %_struct_2
+%__resource_var_0_1__ = OpVariable %_ptr_StorageBuffer__struct_2 StorageBuffer
+%__resource_var_0_0__ = OpVariable %_ptr_StorageBuffer__struct_2 StorageBuffer
+%__resource_var_0_2__ = OpVariable %_ptr_StorageBuffer__struct_2 StorageBuffer
+       %void = OpTypeVoid
+          %9 = OpTypeFunction %void
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+%main = OpFunction %void None %9
+         %12 = OpLabel
+         %15 = OpAccessChain %_ptr_StorageBuffer_uint %__resource_var_0_0__ %uint_0 %uint_0
+         %16 = OpLoad %uint %15
+         %17 = OpAccessChain %_ptr_StorageBuffer_uint %__resource_var_0_1__ %uint_0 %uint_0
+         %18 = OpLoad %uint %17
+         %19 = OpSRem %uint %16 %18
+         %20 = OpAccessChain %_ptr_StorageBuffer_uint %__resource_var_0_2__ %uint_0 %uint_0
+               OpStore %20 %19
+               OpReturn
+               OpFunctionEnd
+END
+
+### OpSRem -16, 7 = -2 ###
+
+BUFFER dividend_buf0  DATA_TYPE uint32 DATA -16 END
+BUFFER divisor_buf0   DATA_TYPE uint32 DATA 7   END
+BUFFER remainder_buf0 DATA_TYPE uint32 DATA 0   END
+
+PIPELINE compute srem_pipeline0
+  ATTACH srem_shader ENTRY_POINT main
+  BIND BUFFER dividend_buf0  AS storage DESCRIPTOR_SET 0 BINDING 0
+  BIND BUFFER divisor_buf0   AS storage DESCRIPTOR_SET 0 BINDING 1
+  BIND BUFFER remainder_buf0 AS storage DESCRIPTOR_SET 0 BINDING 2
+END
+
+RUN srem_pipeline0 1 1 1
+
+EXPECT remainder_buf0 IDX 0 EQ -2
+
+### OpSRem 16, -7 = 2 ###
+
+BUFFER dividend_buf1  DATA_TYPE uint32 DATA 16 END
+BUFFER divisor_buf1   DATA_TYPE uint32 DATA -7 END
+BUFFER remainder_buf1 DATA_TYPE uint32 DATA 0  END
+
+PIPELINE compute srem_pipeline1
+  ATTACH srem_shader ENTRY_POINT main
+  BIND BUFFER dividend_buf1  AS storage DESCRIPTOR_SET 0 BINDING 0
+  BIND BUFFER divisor_buf1   AS storage DESCRIPTOR_SET 0 BINDING 1
+  BIND BUFFER remainder_buf1 AS storage DESCRIPTOR_SET 0 BINDING 2
+END
+
+RUN srem_pipeline1 1 1 1
+
+EXPECT remainder_buf1 IDX 0 EQ 2
